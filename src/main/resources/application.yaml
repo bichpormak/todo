@@ -1,0 +1,8 @@
+server:
+  port: 8087
+
+meeting:
+  restriction:
+    max-participant-in-one-meeting: 50
+    min-duration-meeting: 15
+    max-duration-meeting: 120

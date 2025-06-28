@@ -16,7 +16,6 @@ import java.util.List;
 @Table(name = "meetings")
 @Data
 @AllArgsConstructor
-@NoArgsConstructor
 @Builder(toBuilder = true)
 public class MeetingEntity {
 
@@ -28,15 +27,23 @@ public class MeetingEntity {
     private String name;
 
     @ManyToOne
+    @JoinColumn(name = "organizer_id")
     @NotNull
-    private UserEntity organizer;
+    private final UserEntity organizer;
 
     @ManyToMany
+    @JoinTable(
+            name = "meeting_members",
+            joinColumns = @JoinColumn(name = "meeting_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
     private List<UserEntity> members;
 
     @CreationTimestamp
     private OffsetDateTime createdAt;
 
-    private OffsetDateTime updatedAt;
+    private OffsetDateTime startMeeting;
+    private OffsetDateTime endMeeting;
+    private int duration;
 
 }
