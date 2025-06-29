@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog.releases.v0.0.1/001_create_meetings_table.yaml
   - include:
       file: db/changelog.releases.v0.0.1/002_create_users_table.yaml
+  - include:
+      file: db/changelog.releases.v0.0.1/003_create_meeting_members_table.yaml

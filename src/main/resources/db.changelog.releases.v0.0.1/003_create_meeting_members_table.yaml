@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003_create_meeting_members_table
+      author: bichpormak
+
+      changes:
+        - sql: |
+            create table meeting_members(
+            
+              meeting_id int not null references meetings(id),
+              user_id int not null references users(id),
+              primary key (meeting_id, user_id) 
+            
+            );

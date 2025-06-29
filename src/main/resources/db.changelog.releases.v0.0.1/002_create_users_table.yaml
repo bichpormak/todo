@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002_create_users_table
+      author: bichpormak
+
+      changes:
+        - sql: |
+            create table users (
+            
+              id serial primary key,
+              name text not null,
+              surname text not null,
+              email text not null unique
+            
+            );

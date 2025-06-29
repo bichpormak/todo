@@ -3,6 +3,6 @@ server:
 
 meeting:
   restriction:
-    max-participant-in-one-meeting: 50
+    max-participants-in-one-meeting: 50
     min-duration-meeting: 15
     max-duration-meeting: 120

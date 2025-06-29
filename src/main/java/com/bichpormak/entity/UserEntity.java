@@ -21,9 +21,12 @@ public class UserEntity {
 
     @NotBlank
     private String name;
+
     @NotBlank
     private String surname;
+
     @NotBlank
+    @Column(unique = true)
     private String email;
 
 }

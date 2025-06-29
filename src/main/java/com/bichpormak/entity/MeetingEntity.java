@@ -16,6 +16,7 @@ import java.util.List;
 @Table(name = "meetings")
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder(toBuilder = true)
 public class MeetingEntity {
 
@@ -29,7 +30,7 @@ public class MeetingEntity {
     @ManyToOne
     @JoinColumn(name = "organizer_id")
     @NotNull
-    private final UserEntity organizer;
+    private UserEntity organizer;
 
     @ManyToMany
     @JoinTable(
@@ -42,7 +43,9 @@ public class MeetingEntity {
     @CreationTimestamp
     private OffsetDateTime createdAt;
 
+    @NotNull
     private OffsetDateTime startMeeting;
+
     private OffsetDateTime endMeeting;
     private int duration;
 
