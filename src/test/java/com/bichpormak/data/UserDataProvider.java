@@ -21,7 +21,21 @@ public class UserDataProvider {
         UserEntity organizer = UserEntity.builder()
                 .name("Lev")
                 .surname("Pankratov")
-                .email(UUID.randomUUID()+ "@gmail.com")
+                .email(UUID.randomUUID() + "@gmail.com")
+                .build();
+
+        userRepository.save(organizer);
+
+        return organizer;
+
+    }
+
+    public UserEntity getSecondOrganizer() {
+
+        UserEntity organizer = UserEntity.builder()
+                .name("Ashab")
+                .surname("Tamaev")
+                .email(UUID.randomUUID() + "@gmail.com")
                 .build();
 
         userRepository.save(organizer);

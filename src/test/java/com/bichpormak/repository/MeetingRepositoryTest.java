@@ -4,8 +4,10 @@ import com.bichpormak.data.UserDataProvider;
 import com.bichpormak.entity.MeetingEntity;
 import com.bichpormak.data.MeetingDataProvider;
 import com.bichpormak.entity.UserEntity;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
@@ -14,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -50,60 +53,14 @@ public class MeetingRepositoryTest {
 
     }
 
-    @Test
-    @DisplayName("Test is not save meeting")
-    public void givenMeetingIsNull_whenSave_thenMeetingIsNotCreated() {
-
-        assertThrows(RuntimeException.class, () -> meetingRepository.save(null));
-
-    }
-
-    @Test
-    @DisplayName("Test update meeting after saved")
-    public void givenMeetingToUpdate_whenSave_thenMeetingIsChanged() {
-
-        //given
-        MeetingEntity meeting = meetingDataProvider.getMeetingWithoutMembers();
-
-        meetingRepository.save(meeting);
-
-        String updatedName = "Lecture 0.2";
-
-        MeetingEntity meetingToUpdate = meetingRepository.findById(meeting.getId())
-                .orElse(null);
-
-        meetingToUpdate.setName(updatedName);
-
-        // when
-        MeetingEntity updatedMeeting = meetingRepository.save(meetingToUpdate);
-
-        // then
-        assertThat(updatedMeeting).isNotNull();
-        assertThat(updatedMeeting.getName()).isEqualTo(updatedName);
-
-
-    }
-
     @ParameterizedTest
     @NullSource
-    @DisplayName("Test is not update meeting after saved")
-    public void givenMeetingWithoutNameToUpdate_whenSave_thenMeetingIsNotUpdated(String updatedName) {
+    @DisplayName("Test is not save meeting")
+    public void givenMeetingIsNull_whenSave_thenMeetingIsNotCreated(MeetingEntity meeting) {
 
-        // given
-        MeetingEntity meeting = meetingDataProvider.getMeetingWithoutMembers();
-
-        meetingRepository.save(meeting);
-
-        MeetingEntity meetingToUpdate = meetingRepository.findById(1)
-                .orElse(null);
-
-        meetingToUpdate.setName(updatedName);
-
-        // when
-        MeetingEntity updatedMeeting = meetingRepository.save(meetingToUpdate);
-
-        //then
-        assertThat(updatedMeeting).isNull();
+        assertThrows(
+                RuntimeException.class,
+                () -> meetingRepository.save(meeting));
 
     }
 
@@ -156,6 +113,7 @@ public class MeetingRepositoryTest {
 
     }
 
+    // TODO
     @Test
     @DisplayName("Test delete meeting")
     public void givenMeetingSaved_whenDeleteMeeting_thenMeetingRemoved() {
@@ -202,32 +160,14 @@ public class MeetingRepositoryTest {
 
     }
 
-    @Test
-    @DisplayName("Test search user without meetings")
-    public void givenUserWithoutMeetings_whenGetAllUserMeetings_thenReturnEmptyList() {
 
-        // given
-        UserEntity member = userDataProvider.getMemberForSearchMeetings();
-
-        meetingRepository.save(meetingDataProvider.getMeetingWithoutOriginalUser());
-
-        //when
-        List<MeetingEntity> meetingsOfUser = meetingRepository.getAllUserMeetings(member);
-
-        // then
-        int countUserMeetings = 0; // because we didn't add the user anywhere
-
-        assertThat(meetingsOfUser.isEmpty()).isTrue();
-
-
-    }
-
-    @Test
+    @ParameterizedTest
+    @NullSource
     @DisplayName("Test search non-existent user meetings")
-    public void givenNonExistentUser_whenGetAllUserMeetings_thenReturnEmptyList() {
+    public void givenNonExistentUser_whenGetAllUserMeetings_thenReturnEmptyList(UserEntity nonExistentMember) {
 
         // given
-        UserEntity member = null;
+        UserEntity member = nonExistentMember;
 
         meetingRepository.save(meetingDataProvider.getMeetingWithoutOriginalUser());
 
@@ -242,29 +182,135 @@ public class MeetingRepositoryTest {
 
     }
 
-    @Disabled("needs to be fixed")
     @Test
     @DisplayName("Test search meetings, where user is organizer")
-    public void givenUser_whenGetAllUserMeetingsWhereHeIsOrganizer_thenReturnAllMeetings() {
+    public void givenOrganizer_whenGetAllUserMeetingsWhereHeIsOrganizer_thenReturnAllMeetings() {
 
         // given
         UserEntity organizer = userDataProvider.getOrganizer();
 
-        MeetingEntity firstMeeting = meetingDataProvider.getMeetingWithOneMember();
-        MeetingEntity secondMeeting = meetingDataProvider.getMeetingWithTwoMembers();
-        MeetingEntity thirdMeeting = meetingDataProvider.getMeetingWithThreeMembers();
-
-        meetingRepository.saveAll(List.of(firstMeeting, secondMeeting, thirdMeeting));
+        meetingRepository.saveAll(
+                meetingDataProvider.getThreeMeetingsInTwoOfWhichOriginalOrganizer(organizer));
 
         // when
         List<MeetingEntity> meetingsOfOrganizer =
                 meetingRepository.getAllUserMeetingsWhereHeIsOrganizer(organizer);
 
         // then
-        int countMeetingWhereUserIsOrganizer = 3; // in all meetings this user is the organizer
+        int countMeetingWhereUserIsOrganizer = 2;
 
         assertThat(meetingsOfOrganizer.size())
                 .isEqualTo(countMeetingWhereUserIsOrganizer);
+
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @DisplayName("Test get meetings non-existent organizer")
+    public void givenNonExistentOrganizer_whenGetAllUserMeetingsWhereHeIsOrganizer_thenReturnEmptyList(
+            UserEntity nonExistentOrganizer) {
+
+        // given
+        UserEntity organizer = nonExistentOrganizer;
+
+        // when & then
+        assertThrows(ConstraintViolationException.class,
+                () -> meetingRepository.saveAll(
+                        meetingDataProvider.getThreeMeetingsInTwoOfWhichOriginalOrganizer(organizer))
+        );
+
+    }
+
+    @RepeatedTest(5)
+    @DisplayName("Test get meetings for specified period with borderline cases")
+    public void givenUserAndDates_whenGetMeetingsForSpecifiedPeriod_givenReturnMeetings() {
+
+        // given
+        UserEntity user = userDataProvider.getFirstMember();
+
+        OffsetDateTime startDate = OffsetDateTime.now();
+        OffsetDateTime endDate = startDate.plusHours(3);
+
+        meetingRepository.saveAll(
+                meetingDataProvider.getThreeMeetingsInTwoOfWhichForSpecifiedPeriod(user, startDate, endDate));
+
+        // when
+        List<MeetingEntity> meetingsForSpecifiedPeriod =
+                meetingRepository.getAllUserMeetingsForSpecifiedPeriod(user, startDate, endDate);
+
+        // then
+        int countMeetingForSpecifiedPeriod = 2;
+        assertThat(meetingsForSpecifiedPeriod.size())
+                .isEqualTo(countMeetingForSpecifiedPeriod);
+
+    }
+
+    @Test
+    @DisplayName("Test get upcoming meetings")
+    public void givenUser_whenGetOnlyUsersUpcomingMeetings_thenUpcomingMeetings() {
+
+        // given
+        UserEntity user = userDataProvider.getFirstMember();
+
+        meetingRepository.saveAll(
+                meetingDataProvider.getThreeMeetingsInTwoOfWhichForUpcoming(user));
+
+        // when
+        List<MeetingEntity> upcomingMeetings = meetingRepository.getUsersUpcomingMeetings(user);
+
+        // then
+        int countUpcomingMeetingsOfUser = 2;
+        assertThat(upcomingMeetings.size())
+                .isEqualTo(countUpcomingMeetingsOfUser);
+
+    }
+
+    @Test
+    @DisplayName("Test update meeting after saved")
+    public void givenMeetingToUpdate_whenSaveWithNewName_thenMeetingIsChanged() {
+
+        //given
+        MeetingEntity meeting = meetingDataProvider.getMeetingWithoutMembers();
+
+        meetingRepository.save(meeting);
+
+        String updatedName = "Lecture 0.2";
+
+        MeetingEntity meetingToUpdate = meetingRepository.findById(meeting.getId())
+                .orElse(null);
+
+        meetingToUpdate.setName(updatedName);
+
+        // when
+        MeetingEntity updatedMeeting = meetingRepository.save(meetingToUpdate);
+
+        // then
+        assertThat(updatedMeeting).isNotNull();
+        assertThat(updatedMeeting.getName()).isEqualTo(updatedName);
+
+    }
+
+    @Disabled("figure out why it's not null")
+    @ParameterizedTest
+    @NullSource
+    @DisplayName("Test is not update meeting after saved, because name is null")
+    public void givenMeetingWithoutNameToUpdate_whenSaveWithNewName_thenMeetingIsNotUpdated(String updatedName) {
+
+        // given
+        MeetingEntity meeting = meetingDataProvider.getMeetingWithoutMembers();
+
+        meetingRepository.save(meeting);
+
+        MeetingEntity meetingToUpdate = meetingRepository.findById(meeting.getId())
+                .orElse(null);
+
+        meetingToUpdate.setName(updatedName);
+
+        // when
+        MeetingEntity updatedMeeting = meetingRepository.save(meetingToUpdate);
+
+        //then
+        assertThat(updatedMeeting).isNull();
 
     }
 

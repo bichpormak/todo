@@ -119,5 +119,107 @@ public class MeetingDataProvider {
 
     }
 
+    public List<MeetingEntity> getThreeMeetingsInTwoOfWhichOriginalOrganizer(UserEntity organizer) {
+
+        UserEntity differentOrganizer = userDataProvider.getSecondOrganizer();
+
+        MeetingEntity firstMeetingWithOriginalOrganizer = MeetingEntity.builder()
+                .name("Lecture 0.1")
+                .organizer(organizer)
+                .members(null)
+                .startMeeting(OffsetDateTime.now())
+                .build();
+
+        MeetingEntity secondMeetingWithoutOriginalOrganizer = MeetingEntity.builder()
+                .name("Lecture 0.2")
+                .organizer(differentOrganizer)
+                .members(null)
+                .startMeeting(OffsetDateTime.now())
+                .build();
+
+        MeetingEntity thirdMeetingWithoutOriginalOrganizer = MeetingEntity.builder()
+                .name("Lecture 0.3")
+                .organizer(organizer)
+                .members(null)
+                .startMeeting(OffsetDateTime.now())
+                .build();
+
+        return List.of(
+                firstMeetingWithOriginalOrganizer,
+                secondMeetingWithoutOriginalOrganizer,
+                thirdMeetingWithoutOriginalOrganizer);
+
+    }
+    
+    public List<MeetingEntity> getThreeMeetingsInTwoOfWhichForSpecifiedPeriod(
+            UserEntity member,
+            OffsetDateTime startDate,
+            OffsetDateTime endDate) {
+
+        UserEntity organizer = userDataProvider.getOrganizer();
+
+        MeetingEntity firstMeetingIncludedInTheSpecifiedPeriod = MeetingEntity.builder()
+                .name("Lecture 0.1")
+                .organizer(organizer)
+                .members(List.of(member))
+                .startMeeting(startDate.plusSeconds(1))
+                .endMeeting(endDate)
+                .build();
+
+        MeetingEntity secondMeetingNotIncludedInTheSpecifiedPeriod = MeetingEntity.builder()
+                .name("Lecture 0.2")
+                .organizer(organizer)
+                .members(List.of(member))
+                .startMeeting(endDate.plusMinutes(1))
+                .endMeeting(endDate.plusHours(1))
+                .build();
+
+        MeetingEntity thirdMeetingIncludedInTheSpecifiedPeriod = MeetingEntity.builder()
+                .name("Lecture 0.3")
+                .organizer(organizer)
+                .members(List.of(member))
+                .startMeeting(endDate.minusSeconds(1))
+                .endMeeting(endDate.plusHours(1))
+                .build();
+        
+        return List.of(
+                firstMeetingIncludedInTheSpecifiedPeriod,
+                secondMeetingNotIncludedInTheSpecifiedPeriod,
+                thirdMeetingIncludedInTheSpecifiedPeriod);
+        
+    }
+
+    public List<MeetingEntity> getThreeMeetingsInTwoOfWhichForUpcoming(UserEntity member) {
+
+        UserEntity organizer = userDataProvider.getOrganizer();
+
+        MeetingEntity firstUpcomingMeeting = MeetingEntity.builder()
+                .name("Lecture 0.1")
+                .organizer(organizer)
+                .members(List.of(member))
+                .startMeeting(OffsetDateTime.now().plusHours(1))
+                .build();
+
+        MeetingEntity secondNotUpcomingMeeting = MeetingEntity.builder()
+                .name("Lecture 0.2")
+                .organizer(organizer)
+                .members(List.of(member))
+                .startMeeting(OffsetDateTime.now().minusHours(1))
+                .build();
+
+        MeetingEntity thirdUpcomingMeeting = MeetingEntity.builder()
+                .name("Lecture 0.3")
+                .organizer(organizer)
+                .members(List.of(member))
+                .startMeeting(OffsetDateTime.now().plusYears(1))
+                .build();
+
+        return List.of(
+                firstUpcomingMeeting,
+                secondNotUpcomingMeeting,
+                thirdUpcomingMeeting);
+
+    }
+
 
 }
