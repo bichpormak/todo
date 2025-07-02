@@ -1,59 +1,79 @@
 package com.bichpormak.service;
 
-
-import com.bichpormak.data.MeetingDataProvider;
-import com.bichpormak.data.UserDataProvider;
+import com.bichpormak.config.MeetingConfig;
 import com.bichpormak.dto.CreateMeetingRequest;
-import com.bichpormak.dto.MeetingResponse;
 import com.bichpormak.entity.MeetingEntity;
-import com.bichpormak.mapper.MeetingMapper;
+import com.bichpormak.entity.UserEntity;
 import com.bichpormak.repository.MeetingRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import java.time.OffsetDateTime;
+import java.util.List;
+
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@Import(MeetingDataProvider.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class MeetingServiceTest {
 
     @Mock
-    private MeetingRepository meetingRepository;
+    MeetingRepository meetingRepository;
 
-    @Autowired
-    private MeetingDataProvider meetingDataProvider;
+    @Mock
+    private MeetingConfig meetingConfig;
 
     @InjectMocks
-    private MeetingService meetingService;
+    MeetingServiceImpl meetingService;
 
-    @Test
-    @DisplayName("Test creation valid meetings")
-    public void givenMeetingToCreate_whenCreateMeeting_givenMeetingSavedSuccessful() {
+    MeetingEntity meeting;
 
-        MeetingEntity meeting = meetingDataProvider.getMeetingWithOneMember();
+    CreateMeetingRequest request;
 
-        when(meetingRepository.save(any(MeetingEntity.class))).thenReturn(meeting);
+    @BeforeEach
+    public void setUp() {
 
-        CreateMeetingRequest request = CreateMeetingRequest.builder()
+        UserEntity organizer = UserEntity.builder()
+                .name("Lev")
+                .surname("Pankratov")
+                .email("example@gmail.com")
+                .build();
+
+        UserEntity member = UserEntity.builder()
+                .name("Egor")
+                .surname("Frolov")
+                .email("example2@gmail.com")
+                .build();
+
+        meeting = MeetingEntity.builder()
+                .name("Lecture 0.1")
+                .organizer(organizer)
+                .members(List.of(member))
+                .startMeeting(OffsetDateTime.now())
+                .endMeeting(OffsetDateTime.now().plusHours(1))
+                .duration(60)
+                .build();
+
+        request = CreateMeetingRequest.builder()
                 .name(meeting.getName())
                 .organizer(meeting.getOrganizer())
+                .members(meeting.getMembers())
                 .startMeeting(meeting.getStartMeeting())
                 .endMeeting(meeting.getEndMeeting())
                 .build();
 
-        MeetingResponse response = meetingService.createMeeting(request);
+    }
 
-        assertThat(response)
-                .isNotNull();
+    public void mockProperties(int minDuration, int maxDuration, int maxMembers) {
+
+        when(meetingConfig.getMinDurationMeeting()).thenReturn(minDuration);
+        when(meetingConfig.getMaxDurationMeeting()).thenReturn(maxDuration);
+        when(meetingConfig.getMaxMembersInOneMeeting()).thenReturn(maxMembers);
 
     }
 

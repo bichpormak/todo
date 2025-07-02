@@ -47,7 +47,6 @@ public class MeetingEntity {
     @NotNull
     @Future
     private OffsetDateTime startMeeting;
-
     private OffsetDateTime endMeeting;
     private int duration;
 

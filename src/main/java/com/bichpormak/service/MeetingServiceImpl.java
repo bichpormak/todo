@@ -9,7 +9,6 @@ import com.bichpormak.exception.DurationMeetingException;
 import com.bichpormak.exception.ManyMembersException;
 import com.bichpormak.exception.OrganizerInListMembers;
 import com.bichpormak.exception.TimeParametersException;
-import com.bichpormak.mapper.MeetingMapper;
 import com.bichpormak.repository.MeetingRepository;
 import com.bichpormak.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,28 +27,28 @@ public class MeetingServiceImpl implements MeetingService {
     private final MeetingRepository meetingRepository;
     private final UserRepository userRepository;
     private final MeetingConfig meetingConfig;
-    private final MeetingMapper meetingMapper;
 
     public MeetingResponse createMeeting(CreateMeetingRequest meeting) {
 
         checkOrganizerIsAmongMembers(meeting.getOrganizer(), meeting.getMembers());
         validateTimeParameters(meeting.getEndMeeting(), meeting.getDuration());
+        checkingStartIsNotInPast(meeting.getStartMeeting());
 
-        final OffsetDateTime endTime =
+        final OffsetDateTime endMeeting =
                 getEndMeetingTime(meeting.getStartMeeting(), meeting.getEndMeeting(), meeting.getDuration());
 
-        final Integer duration = getDuration(meeting.getStartMeeting(), endTime);
+        final Integer duration = getDuration(meeting.getStartMeeting(), endMeeting);
 
+        checkEndDateLaterThanStartDate(meeting.getStartMeeting(), endMeeting);
         checkingMeetingCreationRules(meeting.getMembers(), duration);
-        checkEndDateLaterThanStartDate(meeting.getStartMeeting(), endTime);
 
-        MeetingEntity meetingToSave = meetingMapper.map(meeting);
-        meetingToSave.setEndMeeting(endTime);
-        meetingToSave.setDuration(duration);
+        MeetingEntity meetingToSave = buildMeetingFromRequest(meeting, endMeeting, duration);
 
         MeetingEntity savedMeeting = meetingRepository.save(meetingToSave);
 
-        return meetingMapper.map(savedMeeting);
+        doLogAboutSaveMeeting(savedMeeting);
+
+        return buildResponseFromMeetingEntity(savedMeeting);
 
     }
 
@@ -71,6 +70,19 @@ public class MeetingServiceImpl implements MeetingService {
 
             log.error("Failed meeting creation: set both the end of the meeting and the duration");
             throw new TimeParametersException("Conveyed both the end of the meeting and its duration");
+
+        }
+
+    }
+
+    private void checkingStartIsNotInPast(OffsetDateTime startMeeting) {
+
+        int errorSeconds = 5;
+
+        if (startMeeting.isBefore(OffsetDateTime.now().minusSeconds(errorSeconds))) {
+
+            log.error("Failed meeting creation: start in the past");
+            throw new TimeParametersException("Start in the past");
 
         }
 
@@ -118,6 +130,64 @@ public class MeetingServiceImpl implements MeetingService {
 
         return (int) Duration.between(startMeeting, endMeeting).toMinutes();
 
+    }
+
+    private void doLogAboutSaveMeeting(MeetingEntity meeting) {
+
+        log.info("Created meeting id={} : organizer={}, members={}",
+                meeting.getId(),
+                meeting.getOrganizer(),
+                meeting.getMembers().size());
+
+
+    }
+
+    private MeetingEntity buildMeetingFromRequest(CreateMeetingRequest request, OffsetDateTime endMeeting, int duration) {
+
+        return MeetingEntity.builder()
+                .name(request.getName())
+                .organizer(request.getOrganizer())
+                .members(request.getMembers())
+                .startMeeting(request.getStartMeeting())
+                .endMeeting(endMeeting)
+                .duration(duration)
+                .build();
+
+    }
+
+    private MeetingResponse buildResponseFromMeetingEntity(MeetingEntity meeting) {
+
+        return MeetingResponse.builder()
+                .id(meeting.getId())
+                .name(meeting.getName())
+                .organizer(meeting.getOrganizer())
+                .members(meeting.getMembers())
+                .createAt(meeting.getCreatedAt())
+                .startMeeting(meeting.getStartMeeting())
+                .endMeeting(meeting.getEndMeeting())
+                .duration(meeting.getDuration())
+                .build();
+
+    }
+
+    @Override
+    public List<MeetingEntity> getAllUserMeetings(UserEntity userEntity) {
+        return null;
+    }
+
+    @Override
+    public List<MeetingEntity> getAllUserMeetingsWhereHeIsOrganizer(UserEntity userEntity) {
+        return null;
+    }
+
+    @Override
+    public List<MeetingEntity> getAllUserMeetingsForSpecifiedPeriod(UserEntity userEntity, OffsetDateTime startDate, OffsetDateTime endDate) {
+        return null;
+    }
+
+    @Override
+    public List<MeetingEntity> getUsersUpcomingMeetings(UserEntity userEntity) {
+        return null;
     }
 
 }
