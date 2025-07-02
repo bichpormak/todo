@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 public class MeetingConfig {
 
-    @Value("${meeting.restriction.max-participants-in-one-meeting}")
-    private int maxParticipantsInOneMeeting;
+    @Value("${meeting.restriction.max-members-in-one-meeting}")
+    private int maxMembersInOneMeeting;
 
     @Value("${meeting.restriction.min-duration-meeting}")
     private int minDurationMeeting;
