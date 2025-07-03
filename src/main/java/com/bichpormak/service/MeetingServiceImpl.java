@@ -5,10 +5,7 @@ import com.bichpormak.dto.CreateMeetingRequest;
 import com.bichpormak.dto.MeetingResponse;
 import com.bichpormak.entity.MeetingEntity;
 import com.bichpormak.entity.UserEntity;
-import com.bichpormak.exception.DurationMeetingException;
-import com.bichpormak.exception.ManyMembersException;
-import com.bichpormak.exception.OrganizerInListMembers;
-import com.bichpormak.exception.TimeParametersException;
+import com.bichpormak.exception.*;
 import com.bichpormak.repository.MeetingRepository;
 import com.bichpormak.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +27,7 @@ public class MeetingServiceImpl implements MeetingService {
 
     public MeetingResponse createMeeting(CreateMeetingRequest meeting) {
 
-        checkOrganizerIsAmongMembers(meeting.getOrganizer(), meeting.getMembers());
+        checkOrganizerIsNotAmongMembers(meeting.getOrganizer(), meeting.getMembers());
         validateTimeParameters(meeting.getEndMeeting(), meeting.getDuration());
         checkingStartIsNotInPast(meeting.getStartMeeting());
 
@@ -52,8 +49,8 @@ public class MeetingServiceImpl implements MeetingService {
 
     }
 
-    private void checkOrganizerIsAmongMembers(UserEntity organizer,
-                                              List<UserEntity> members) {
+    private void checkOrganizerIsNotAmongMembers(UserEntity organizer,
+                                                 List<UserEntity> members) {
 
         boolean organizerInListMembers = members.contains(organizer);
 
@@ -172,22 +169,77 @@ public class MeetingServiceImpl implements MeetingService {
 
     @Override
     public List<MeetingEntity> getAllUserMeetings(UserEntity userEntity) {
-        return null;
+
+        checkingUserExistence(userEntity);
+
+        List<MeetingEntity> meetings = meetingRepository.getAllUserMeetings(userEntity);
+
+        for (MeetingEntity meeting : meetings) {
+            log.info("Get meeting: {}", meeting);
+        }
+
+        return meetings;
+
+    }
+
+    private void checkingUserExistence(UserEntity userEntity) {
+
+        userRepository.findById(userEntity.getId())
+                .orElseThrow(() -> {
+
+                    log.error("Failed to get meetings: user not found");
+                    return new UserNotFoundException("User not found");
+
+                });
+
     }
 
     @Override
     public List<MeetingEntity> getAllUserMeetingsWhereHeIsOrganizer(UserEntity userEntity) {
-        return null;
+
+        checkingUserExistence(userEntity);
+
+        List<MeetingEntity> meetings =
+                meetingRepository.getAllUserMeetingsWhereHeIsOrganizer(userEntity);
+
+        for (MeetingEntity meeting : meetings) {
+            log.info("Get meeting: {}", meetings);
+        }
+
+        return meetings;
+
     }
 
     @Override
     public List<MeetingEntity> getAllUserMeetingsForSpecifiedPeriod(UserEntity userEntity, OffsetDateTime startDate, OffsetDateTime endDate) {
-        return null;
+
+        checkingUserExistence(userEntity);
+        checkEndDateLaterThanStartDate(startDate, endDate);
+
+        List<MeetingEntity> meetings =
+                meetingRepository.getAllUserMeetingsForSpecifiedPeriod(userEntity, startDate, endDate);
+
+        for (MeetingEntity meeting : meetings) {
+            log.info("Get meeting: {}", meeting);
+        }
+
+        return meetings;
+
     }
 
     @Override
     public List<MeetingEntity> getUsersUpcomingMeetings(UserEntity userEntity) {
-        return null;
+
+        checkingUserExistence(userEntity);
+
+        List<MeetingEntity> meetings = meetingRepository.getUsersUpcomingMeetings(userEntity);
+
+        for (MeetingEntity meeting : meetings) {
+            log.info("Get meeting: {}", meeting);
+        }
+
+        return meetings;
+
     }
 
 }
